@@ -3,34 +3,37 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from sentence_transformers import SentenceTransformer
 from sklearn.metrics.pairwise import cosine_similarity
-import pandas as pd, requests, json
-from pathlib import Path
+import pandas as pd
+import requests
+import json
+import re
+from urllib.parse import quote_plus
 
 app = FastAPI()
 
-# Get the directory where this file is located, then go up one level to find frontend
-BASE_DIR = Path(__file__).parent.parent
-FRONTEND_DIR = BASE_DIR / "frontend"
-
-# Serve frontend files
-app.mount("/static", StaticFiles(directory=str(FRONTEND_DIR)), name="static")
+# Serve the frontend files
+app.mount("/static", StaticFiles(directory="../frontend"), name="static")
 
 @app.get("/")
 async def root():
-    # Serve main HTML page
-    return FileResponse(str(FRONTEND_DIR / "index.html"))
+    return FileResponse("../frontend/index.html")
 
-
-# Load ML model
+# Load ML model once
 model = SentenceTransformer("all-MiniLM-L6-v2")
+
+
+def clean_hashtag(name: str) -> str:
+    """Basic cleaning: lowercase, keep letters/numbers only."""
+    name = name.lower()
+    name = re.sub(r"[^a-z0-9]+", "", name)
+    return name
 
 
 @app.post("/recommend")
 async def recommend(file: UploadFile, news_api_key: str = Form(...)):
 
-    # Load TikTok JSON and extract hashtags
+    # 1. Load TikTok JSON and extract hashtags
     raw_bytes = await file.read()
-
     try:
         raw = json.loads(raw_bytes)
     except json.JSONDecodeError:
@@ -45,29 +48,61 @@ async def recommend(file: UploadFile, news_api_key: str = Form(...)):
     if not hashtag_list:
         raise HTTPException(status_code=400, detail="No hashtags found in TikTok file")
 
-    texts = [h.get("HashtagName", "").strip()
-             for h in hashtag_list if h.get("HashtagName")]
-    
-    # Filter out empty strings after stripping
-    texts = [t for t in texts if t]
-
-    if not texts:
+    # Original hashtag texts
+    raw_tags = [h.get("HashtagName", "").strip()
+                for h in hashtag_list if h.get("HashtagName")]
+    if not raw_tags:
         raise HTTPException(status_code=400, detail="No usable hashtag texts detected")
 
+    # 2. Build texts for interest vector (use original tag strings)
+    texts = raw_tags
 
-    # Embed TikTok hashtags → interest vector
     hashtag_embs = model.encode(texts, show_progress_bar=False)
     profile_vec = hashtag_embs.mean(axis=0)
 
+    # 3. Build a NewsAPI search query from cleaned hashtags
+    #    Filter out generic/noisy ones and very short ones
+    stop_tags = {
+        "fyp", "foryou", "trending", "viral", "funny", "explore",
+        "tiktok", "tiktokdance", "xyzbca"
+    }
 
-    # 3. Fetch up to 100 news articles
-    url = (
-        "https://newsapi.org/v2/top-headlines?"
-        f"language=en&pageSize=100&page=1&apiKey={news_api_key}"
-    )
-    
+    cleaned_tags = []
+    for t in raw_tags:
+        ct = clean_hashtag(t)
+        if not ct:
+            continue
+        if ct in stop_tags:
+            continue
+        # ignore very short tokens (1–2 chars)
+        if len(ct) < 3:
+            continue
+        cleaned_tags.append(ct)
+
+    # Deduplicate and limit how many we put in the query
+    cleaned_tags = list(dict.fromkeys(cleaned_tags))[:5]
+
+    # If nothing meaningful remains, fall back to a generic query
+    if cleaned_tags:
+        query = " OR ".join(cleaned_tags)
+    else:
+        query = ""  # will just pull general articles
+
+    # 4. Fetch up to 100 news articles using the query
+    if query:
+        q_param = quote_plus(query)
+        url = (
+            "https://newsapi.org/v2/everything?"
+            f"q={q_param}&language=en&pageSize=100&page=1&apiKey={news_api_key}"
+        )
+    else:
+        # fallback: generic headlines if no good hashtags to query
+        url = (
+            "https://newsapi.org/v2/top-headlines?"
+            f"language=en&pageSize=100&page=1&apiKey={news_api_key}"
+        )
+
     response = requests.get(url)
-
     if response.status_code != 200:
         raise HTTPException(
             status_code=500,
@@ -76,22 +111,21 @@ async def recommend(file: UploadFile, news_api_key: str = Form(...)):
 
     data = response.json()
     articles = data.get("articles", [])
-
     if not articles:
         raise HTTPException(status_code=500, detail="No news articles returned")
 
     df = pd.DataFrame(articles).dropna(subset=["title", "description"])
+    if df.empty:
+        raise HTTPException(status_code=500, detail="No usable news articles returned")
 
-
-    # Embed all article texts
+    # 5. Embed all article texts
     news_texts = (df["title"] + " " + df["description"]).tolist()
     news_embs = model.encode(news_texts, show_progress_bar=False)
 
     scores = cosine_similarity(news_embs, profile_vec.reshape(1, -1)).flatten()
     df["score"] = scores
 
-
-    # Return articles sorted by similarity
+    # 6. Sort by similarity and return all
     df = df.sort_values("score", ascending=False)
 
     return df[["title", "description", "url", "score"]].to_dict(orient="records")
