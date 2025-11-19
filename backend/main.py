@@ -4,16 +4,21 @@ from fastapi.staticfiles import StaticFiles
 from sentence_transformers import SentenceTransformer
 from sklearn.metrics.pairwise import cosine_similarity
 import pandas as pd, requests, json
+from pathlib import Path
 
 app = FastAPI()
 
+# Get the directory where this file is located, then go up one level to find frontend
+BASE_DIR = Path(__file__).parent.parent
+FRONTEND_DIR = BASE_DIR / "frontend"
+
 # Serve frontend files
-app.mount("/static", StaticFiles(directory="frontend"), name="static")
+app.mount("/static", StaticFiles(directory=str(FRONTEND_DIR)), name="static")
 
 @app.get("/")
 async def root():
     # Serve main HTML page
-    return FileResponse("frontend/index.html")
+    return FileResponse(str(FRONTEND_DIR / "index.html"))
 
 
 # Load ML model

@@ -60,11 +60,15 @@ The system performs the following steps:
 ## Project Structure
 
 ```
-backend/
+NewsReccomendation/
 │
-├── main.py            # FastAPI backend, ML logic, and news ranking
+├── backend/
+│   └── main.py        # FastAPI backend, ML logic, and news ranking
 ├── frontend/
 │   └── index.html     # Browser interface
+├── sample_data/       # Sample TikTok JSON files for testing
+├── requirements.txt   # Python dependencies
+└── README.md          # This file
 ```
 
 ## TikTok Input Format
