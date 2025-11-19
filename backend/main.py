@@ -32,7 +32,7 @@ def clean_hashtag(name: str) -> str:
 @app.post("/recommend")
 async def recommend(file: UploadFile, news_api_key: str = Form(...)):
 
-    # 1. Load TikTok JSON and extract hashtags
+    # Load TikTok JSON and extract hashtags
     raw_bytes = await file.read()
     try:
         raw = json.loads(raw_bytes)
@@ -54,14 +54,14 @@ async def recommend(file: UploadFile, news_api_key: str = Form(...)):
     if not raw_tags:
         raise HTTPException(status_code=400, detail="No usable hashtag texts detected")
 
-    # 2. Build texts for interest vector (use original tag strings)
+    # Build texts for interest vector 
     texts = raw_tags
 
     hashtag_embs = model.encode(texts, show_progress_bar=False)
     profile_vec = hashtag_embs.mean(axis=0)
 
-    # 3. Build a NewsAPI search query from cleaned hashtags
-    #    Filter out generic/noisy ones and very short ones
+    # Build a NewsAPI search query from cleaned hashtags
+    # Filter out generic/noisy ones and very short ones
     stop_tags = {
         "fyp", "foryou", "trending", "viral", "funny", "explore",
         "tiktok", "tiktokdance", "xyzbca"
@@ -86,9 +86,9 @@ async def recommend(file: UploadFile, news_api_key: str = Form(...)):
     if cleaned_tags:
         query = " OR ".join(cleaned_tags)
     else:
-        query = ""  # will just pull general articles
+        query = ""  # pull general articles
 
-    # 4. Fetch up to 100 news articles using the query
+    # Fetch up to 100 news articles using the query
     if query:
         q_param = quote_plus(query)
         url = (
@@ -118,14 +118,14 @@ async def recommend(file: UploadFile, news_api_key: str = Form(...)):
     if df.empty:
         raise HTTPException(status_code=500, detail="No usable news articles returned")
 
-    # 5. Embed all article texts
+    # Embed all article texts
     news_texts = (df["title"] + " " + df["description"]).tolist()
     news_embs = model.encode(news_texts, show_progress_bar=False)
 
     scores = cosine_similarity(news_embs, profile_vec.reshape(1, -1)).flatten()
     df["score"] = scores
 
-    # 6. Sort by similarity and return all
+    # Sort by similarity and return all
     df = df.sort_values("score", ascending=False)
 
     return df[["title", "description", "url", "score"]].to_dict(orient="records")
