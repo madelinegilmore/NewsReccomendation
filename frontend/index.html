@@ -2,102 +2,483 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>TikTok → News Recommender</title>
   <style>
-    body {
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    * {
       margin: 0;
-      padding: 2rem;
-      background: #f5f5f5;
+      padding: 0;
+      box-sizing: border-box;
     }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", sans-serif;
+      min-height: 100vh;
+      background: #e8e6e3;
+      padding: 0;
+      overflow-x: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .background-shapes {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      z-index: 0;
+      opacity: 0.03;
+    }
+
+    .shape {
+      position: absolute;
+      border-radius: 50%;
+      background: #3d3d3d;
+      animation: float 20s infinite ease-in-out;
+    }
+
+    .shape:nth-child(1) {
+      width: 300px;
+      height: 300px;
+      top: -150px;
+      left: -150px;
+      animation-delay: 0s;
+    }
+
+    .shape:nth-child(2) {
+      width: 200px;
+      height: 200px;
+      top: 50%;
+      right: -100px;
+      animation-delay: -7s;
+    }
+
+    .shape:nth-child(3) {
+      width: 150px;
+      height: 150px;
+      bottom: -75px;
+      left: 30%;
+      animation-delay: -14s;
+    }
+
+    @keyframes float {
+      0%, 100% {
+        transform: translate(0, 0) rotate(0deg);
+      }
+      33% {
+        transform: translate(30px, -30px) rotate(120deg);
+      }
+      66% {
+        transform: translate(-20px, 20px) rotate(240deg);
+      }
+    }
+
     .container {
-      max-width: 900px;
-      margin: 0 auto;
-      background: #fff;
-      padding: 1.5rem 2rem;
-      border-radius: 12px;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      max-width: 100%;
+      min-height: 100vh;
+      margin: 0;
+      background: #f5f3f0;
+      padding: 3rem 5%;
+      border-radius: 0;
+      box-shadow: none;
+      animation: slideIn 0.6s ease-out;
     }
+
+    @keyframes slideIn {
+      from {
+        opacity: 0;
+        transform: translateY(30px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .header {
+      text-align: center;
+      margin-bottom: 3rem;
+      max-width: 800px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
     h1 {
-      margin-top: 0;
+      font-size: 3.5rem;
+      font-weight: 700;
+      color: #2d2d2d;
+      margin-bottom: 0.75rem;
+      letter-spacing: -1.5px;
     }
+
+    .subtitle {
+      color: #6b6b6b;
+      font-size: 1.2rem;
+      line-height: 1.6;
+      font-weight: 400;
+    }
+
+    .form-group {
+      margin-bottom: 2rem;
+      max-width: 900px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
     label {
       display: block;
-      margin-top: 1rem;
+      margin-bottom: 0.75rem;
       font-weight: 600;
+      color: #3d3d3d;
+      font-size: 1rem;
+      text-transform: none;
+      letter-spacing: 0;
     }
-    input[type="file"],
-    input[type="text"] {
-      margin-top: 0.5rem;
-      margin-bottom: 0.5rem;
+
+    .file-input-wrapper {
+      position: relative;
+      overflow: hidden;
+      display: inline-block;
       width: 100%;
     }
-    input[type="text"] {
-      padding: 0.5rem;
-      border-radius: 6px;
-      border: 1px solid #ccc;
+
+    .file-input-wrapper input[type="file"] {
+      position: absolute;
+      left: -9999px;
     }
+
+    .file-input-label {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 3rem;
+      border: 2px solid #d4d1cc;
+      border-radius: 24px;
+      background: #fafaf8;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      text-align: center;
+      font-size: 1.1rem;
+    }
+
+    .file-input-label:hover {
+      border-color: #a8a5a0;
+      background: #ffffff;
+      transform: translateY(-2px);
+    }
+
+    .file-input-label.has-file {
+      border-color: #7c9885;
+      background: #e8f0ea;
+      border-style: solid;
+    }
+
+    .file-icon {
+      font-size: 2rem;
+      margin-right: 0.5rem;
+    }
+
+    input[type="text"] {
+      width: 100%;
+      padding: 1.25rem 1.5rem;
+      border-radius: 16px;
+      border: 2px solid #d4d1cc;
+      font-size: 1.1rem;
+      transition: all 0.3s ease;
+      background: #fafaf8;
+    }
+
+    input[type="text"]:focus {
+      outline: none;
+      border-color: #a8a5a0;
+      background: white;
+      box-shadow: 0 0 0 4px rgba(168, 165, 160, 0.1);
+    }
+
     button {
-      margin-top: 1rem;
-      padding: 0.6rem 1.2rem;
-      border-radius: 999px;
+      width: 100%;
+      max-width: 900px;
+      margin: 2.5rem auto 0;
+      display: block;
+      padding: 1.25rem 2rem;
+      border-radius: 20px;
       border: none;
-      background: #4f46e5;
+      background: #2d2d2d;
       color: white;
       font-weight: 600;
+      font-size: 1.15rem;
       cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      text-transform: none;
+      letter-spacing: 0;
     }
+
+    button:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(0,0,0,0.2);
+      background: #3d3d3d;
+    }
+
+    button:active:not(:disabled) {
+      transform: translateY(0);
+    }
+
     button:disabled {
       opacity: 0.6;
-      cursor: default;
+      cursor: not-allowed;
+      transform: none;
     }
+
     .status {
-      margin-top: 1rem;
-      font-size: 0.9rem;
-      color: #555;
+      margin: 2rem auto;
+      max-width: 900px;
+      padding: 1.25rem 1.75rem;
+      border-radius: 16px;
+      font-size: 1.05rem;
+      text-align: center;
+      animation: fadeIn 0.3s ease;
     }
-    .error {
-      color: #b91c1c;
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
     }
+
+    .status.info {
+      background: #e3ebf5;
+      color: #3d5a7f;
+      border: 2px solid #c5d5e8;
+    }
+
+    .status.error {
+      background: #f5e3e3;
+      color: #7f3d3d;
+      border: 2px solid #e8c5c5;
+    }
+
+    .status.success {
+      background: #e8f0ea;
+      color: #3d5f44;
+      border: 2px solid #c5d8ca;
+    }
+
     .results {
-      margin-top: 2rem;
+      margin-top: 3rem;
     }
+
+    .results-header {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: #2d2d2d;
+      margin-bottom: 1.5rem;
+      text-align: center;
+    }
+
     .article {
-      padding: 1rem 0;
-      border-bottom: 1px solid #eee;
+      padding: 1.5rem;
+      margin-bottom: 1rem;
+      border-radius: 24px;
+      background: #fafaf8;
+      border: 2px solid #e8e6e3;
+      transition: all 0.3s ease;
+      animation: articleSlideIn 0.4s ease-out backwards;
     }
-    .article:last-child {
-      border-bottom: none;
+
+    .article:nth-child(1) { animation-delay: 0.05s; }
+    .article:nth-child(2) { animation-delay: 0.1s; }
+    .article:nth-child(3) { animation-delay: 0.15s; }
+    .article:nth-child(4) { animation-delay: 0.2s; }
+    .article:nth-child(5) { animation-delay: 0.25s; }
+
+    @keyframes articleSlideIn {
+      from {
+        opacity: 0;
+        transform: translateX(-20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateX(0);
+      }
     }
-    .article-title {
+
+    .article:hover {
+      border-color: #c5c3be;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.08);
+      transform: translateY(-2px);
+      background: #ffffff;
+    }
+
+    .article-header {
+      display: flex;
+      align-items: start;
+      gap: 1rem;
+      margin-bottom: 0.75rem;
+    }
+
+    .article-number {
+      flex-shrink: 0;
+      width: 40px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #2d2d2d;
+      color: white;
+      border-radius: 12px;
       font-weight: 600;
-      margin-bottom: 0.3rem;
+      font-size: 1rem;
     }
+
+    .article-title {
+      flex: 1;
+      font-weight: 600;
+      font-size: 1.25rem;
+      line-height: 1.4;
+    }
+
+    .article-title a {
+      color: #2d2d2d;
+      text-decoration: none;
+      transition: color 0.2s ease;
+    }
+
+    .article-title a:hover {
+      color: #5d5d5d;
+    }
+
+    .article-description {
+      color: #6b6b6b;
+      line-height: 1.7;
+      margin-bottom: 1rem;
+      font-size: 1.05rem;
+    }
+
+    .article-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+
     .article-score {
-      font-size: 0.85rem;
-      color: #6b7280;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.5rem 1rem;
+      background: #e8e6e3;
+      color: #5d5d5d;
+      border-radius: 12px;
+      font-size: 0.95rem;
+      font-weight: 600;
+    }
+
+    .loader {
+      display: inline-block;
+      width: 20px;
+      height: 20px;
+      border: 3px solid rgba(255, 255, 255, 0.3);
+      border-radius: 50%;
+      border-top-color: white;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    @media (max-width: 768px) {
+      .container {
+        padding: 2rem 1.5rem;
+      }
+
+      h1 {
+        font-size: 2.5rem;
+      }
+
+      .subtitle {
+        font-size: 1.05rem;
+      }
+
+      .file-input-label {
+        padding: 2rem;
+        font-size: 1rem;
+      }
+
+      input[type="text"] {
+        font-size: 1rem;
+        padding: 1rem 1.25rem;
+      }
+
+      button {
+        font-size: 1.05rem;
+        padding: 1rem 2rem;
+      }
+
+      .article {
+        padding: 1.5rem;
+      }
+
+      .article-title {
+        font-size: 1.1rem;
+      }
+
+      .article-description {
+        font-size: 1rem;
+      }
+
+      .results-header {
+        font-size: 1.5rem;
+      }
     }
   </style>
 </head>
 <body>
+  <div class="background-shapes">
+    <div class="shape"></div>
+    <div class="shape"></div>
+    <div class="shape"></div>
+  </div>
+
   <div class="container">
-    <h1>📰 TikTok → News Recommender</h1>
-    <p>
-      Upload your TikTok data JSON and your NewsAPI key.  
-      The app will find up to 100 recent news articles whose topics best match your TikTok hashtags.
-    </p>
+    <div class="header">
+      <h1>📰 TikTok → News Recommender</h1>
+      <p class="subtitle">
+        Upload your TikTok data and discover news articles that match your interests.
+        Get up to 100 personalized recommendations based on your viewing habits.
+      </p>
+    </div>
 
     <form id="recommender-form">
-      <label for="file">TikTok data JSON file</label>
-      <input type="file" id="file" name="file" accept=".json" required />
+      <div class="form-group">
+        <label for="file">📁 TikTok Data File</label>
+        <div class="file-input-wrapper">
+          <input type="file" id="file" name="file" accept=".json" required />
+          <label for="file" class="file-input-label" id="file-label">
+            <span class="file-icon">📤</span>
+            <span id="file-text">Click or drag to upload JSON file</span>
+          </label>
+        </div>
+      </div>
 
-      <label for="news_api_key">NewsAPI key</label>
-      <input type="text" id="news_api_key" name="news_api_key" placeholder="Enter your NewsAPI.org key" required />
+      <div class="form-group">
+        <label for="news_api_key">🔑 NewsAPI Key</label>
+        <input type="text" id="news_api_key" name="news_api_key" placeholder="Enter your NewsAPI.org key" required />
+      </div>
 
-      <button type="submit" id="submit-btn">Get Recommendations</button>
+      <button type="submit" id="submit-btn">
+        <span id="btn-text">Get Recommendations</span>
+      </button>
     </form>
 
-    <div class="status" id="status"></div>
+    <div id="status"></div>
 
     <div class="results" id="results"></div>
   </div>
@@ -107,24 +488,39 @@
     const statusEl = document.getElementById("status");
     const resultsEl = document.getElementById("results");
     const submitBtn = document.getElementById("submit-btn");
+    const btnText = document.getElementById("btn-text");
+    const fileInput = document.getElementById("file");
+    const fileLabel = document.getElementById("file-label");
+    const fileText = document.getElementById("file-text");
+
+    fileInput.addEventListener("change", (e) => {
+      if (e.target.files[0]) {
+        fileLabel.classList.add("has-file");
+        fileText.textContent = `✓ ${e.target.files[0].name}`;
+      } else {
+        fileLabel.classList.remove("has-file");
+        fileText.textContent = "Click or drag to upload JSON file";
+      }
+    });
 
     form.addEventListener("submit", async (e) => {
       e.preventDefault();
       resultsEl.innerHTML = "";
       statusEl.textContent = "";
-      statusEl.classList.remove("error");
+      statusEl.className = "status";
 
-      const fileInput = document.getElementById("file");
       const keyInput = document.getElementById("news_api_key");
 
       if (!fileInput.files[0]) {
-        statusEl.textContent = "Please choose a TikTok JSON file.";
-        statusEl.classList.add("error");
+        statusEl.textContent = "⚠️ Please choose a TikTok JSON file.";
+        statusEl.className = "status error";
         return;
       }
 
       submitBtn.disabled = true;
-      statusEl.textContent = "Running recommender… this may take a moment.";
+      btnText.innerHTML = '<span class="loader"></span>';
+      statusEl.textContent = "🔍 Analyzing your interests and finding matching articles...";
+      statusEl.className = "status info";
 
       const formData = new FormData();
       formData.append("file", fileInput.files[0]);
@@ -139,40 +535,55 @@
         const data = await res.json();
 
         if (!res.ok) {
-          statusEl.textContent = data.detail || "Error from server.";
-          statusEl.classList.add("error");
+          statusEl.textContent = `❌ ${data.detail || "Error from server."}`;
+          statusEl.className = "status error";
           submitBtn.disabled = false;
+          btnText.textContent = "Get Recommendations";
           return;
         }
 
-        statusEl.textContent = `Found ${data.length} articles sorted by similarity to your TikTok interests.`;
+        statusEl.textContent = `✨ Found ${data.length} articles perfectly matched to your interests!`;
+        statusEl.className = "status success";
 
         if (data.length === 0) {
-          resultsEl.innerHTML = "<p>No articles returned.</p>";
+          resultsEl.innerHTML = "<p style='text-align: center; color: #6b7280;'>No articles returned.</p>";
         } else {
-          // Show top 20 visually (you still got up to 100 back)
+          const resultsHeader = document.createElement("div");
+          resultsHeader.className = "results-header";
+          resultsHeader.textContent = "📊 Your Personalized News Feed";
+          resultsEl.appendChild(resultsHeader);
+
           const topToShow = data.slice(0, 20);
           topToShow.forEach((article, idx) => {
             const div = document.createElement("div");
             div.className = "article";
             div.innerHTML = `
-              <div class="article-title">${idx + 1}. 
-                <a href="${article.url}" target="_blank" rel="noopener noreferrer">
-                  ${article.title}
-                </a>
+              <div class="article-header">
+                <div class="article-number">${idx + 1}</div>
+                <div class="article-title">
+                  <a href="${article.url}" target="_blank" rel="noopener noreferrer">
+                    ${article.title}
+                  </a>
+                </div>
               </div>
-              <div>${article.description || ""}</div>
-              <div class="article-score">Similarity score: ${article.score.toFixed(3)}</div>
+              <div class="article-description">${article.description || "No description available."}</div>
+              <div class="article-footer">
+                <div class="article-score">
+                  <span>🎯</span>
+                  <span>Match: ${(article.score * 100).toFixed(1)}%</span>
+                </div>
+              </div>
             `;
             resultsEl.appendChild(div);
           });
         }
       } catch (err) {
         console.error(err);
-        statusEl.textContent = "Network or server error.";
-        statusEl.classList.add("error");
+        statusEl.textContent = "❌ Network or server error. Please try again.";
+        statusEl.className = "status error";
       } finally {
         submitBtn.disabled = false;
+        btnText.textContent = "Get Recommendations";
       }
     });
   </script>
