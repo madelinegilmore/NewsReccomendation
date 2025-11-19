@@ -29,7 +29,7 @@ The system performs the following steps:
 1. Install dependencies:
 
    ```bash
-   pip install fastapi uvicorn sentence-transformers scikit-learn requests pandas python-multipart
+   pip install -r requirements.txt
    ```
 
 2. Navigate into the `backend` directory:
