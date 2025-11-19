@@ -57,6 +57,26 @@ The system performs the following steps:
 
 6. View the recommended news articles sorted by similarity.
 
+## Running Tests
+
+To run the test suite:
+
+```bash
+pytest
+```
+
+Or with more verbose output:
+
+```bash
+pytest -v
+```
+
+The tests cover:
+* Root endpoint functionality
+* Successful recommendation requests
+* Error handling (invalid JSON, missing hashtags, NewsAPI errors)
+* Data validation and filtering
+
 ## Project Structure
 
 ```
@@ -66,8 +86,12 @@ NewsReccomendation/
 │   └── main.py        # FastAPI backend, ML logic, and news ranking
 ├── frontend/
 │   └── index.html     # Browser interface
+├── tests/
+│   ├── __init__.py
+│   └── test_main.py   # Test suite for the application
 ├── sample_data/       # Sample TikTok JSON files for testing
 ├── requirements.txt   # Python dependencies
+├── pytest.ini         # Pytest configuration
 └── README.md          # This file
 ```
 

@@ -47,6 +47,9 @@ async def recommend(file: UploadFile, news_api_key: str = Form(...)):
 
     texts = [h.get("HashtagName", "").strip()
              for h in hashtag_list if h.get("HashtagName")]
+    
+    # Filter out empty strings after stripping
+    texts = [t for t in texts if t]
 
     if not texts:
         raise HTTPException(status_code=400, detail="No usable hashtag texts detected")
